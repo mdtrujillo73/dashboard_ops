@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cargador de datos, filtros institucionales compartidos y formateadores
 para el Dashboard de Prestación de Servicios (OPS 2018–2026) – Colombia Compra Eficiente.
 """
