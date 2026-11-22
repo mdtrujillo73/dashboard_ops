@@ -70,11 +70,12 @@ st.markdown(f"""
 # ── DESCARGA DE PRODUCTOS MAESTROS DEL PROYECTO ─────────────────────────────
 st.markdown('<div class="section-header">📦 Productos Maestros Disponibles en la Carpeta del Proyecto</div>', unsafe_allow_html=True)
 
-prod_cols = st.columns(3)
+prod_cols = st.columns(4)
 productos = [
+    ("CCE-EMAE-FM-04 Ficha Metodologica Prestacion de Servicios 1.docx", "📘 Ficha Metodológica Oficial (CCE-EMAE-FM-04)", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    ("Informe_Ejecutivo_Graficas_OPS_2018_2026.docx", "📝 Informe Ejecutivo con 6 Gráficas (Word)", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
     ("Analisis_Profundo_OPS_2014_2026.xlsx", "📊 Análisis Profundo Excel (20 pestañas)", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    ("Informe_Investigacion_OPS_Colombia_2014_2026.docx", "📝 Informe Técnico en Word", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-    ("Documento_Modificaciones_y_Mejoras_Producto.docx", "🛠️ Documento de Mejoras del Producto", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    ("Documento_Modificaciones_y_Mejoras_Producto.docx", "🛠️ Bitácora Técnica de Mejoras (Word)", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
 ]
 for col_ui, (fname, label_p, mime_t) in zip(prod_cols, productos):
     fpath = get_project_file(fname)
