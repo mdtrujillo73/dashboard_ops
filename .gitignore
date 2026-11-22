@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+# Evitar subir accidentalmente CSVs masivos o archivos ZIP pesados si se copian aquí
+Resultados*.csv
+Contratos_20*.xlsx
+OPS 2018-2026.zip

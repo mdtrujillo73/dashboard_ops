@@ -1,0 +1,37 @@
+{
+  "fecha_generacion": "2026-11-22 14:07:57",
+  "fecha_firma_min": "2018-01-01",
+  "fecha_firma_max": "2026-08-28",
+  "total_filas_leidas": 8092820,
+  "total_descartados_valor_cero": 6718,
+  "total_duplicados_eliminados": 746350,
+  "total_contratos": 6700430,
+  "valor_total_cop": 217382873407972.06,
+  "total_entidades_cod": 9837,
+  "total_entidades_unif": 6899,
+  "total_nits_unicos": 6855,
+  "total_personas_naturales_unicas": 1421658,
+  "entidades_por_orden": {
+    "DEPARTAMENTAL": 7731,
+    "MUNICIPAL": 1692,
+    "NACIONAL": 414
+  },
+  "nits_por_orden": {
+    "DEPARTAMENTAL": 5839,
+    "MUNICIPAL": 1312,
+    "NACIONAL": 199
+  },
+  "contratos_por_orden": {
+    "DEPARTAMENTAL": 3040959,
+    "MUNICIPAL": 2626566,
+    "NACIONAL": 1032905
+  },
+  "valor_por_orden": {
+    "DEPARTAMENTAL": 91306542815584.7,
+    "MUNICIPAL": 70043996487016.41,
+    "NACIONAL": 56032334105370.94
+  },
+  "valor_nominal_cop": 1.3430007339243917e+17,
+  "n_contratos_outlier_digitacion": 253,
+  "valor_outliers_digitacion_cop": 1.340826905190312e+17
+}
