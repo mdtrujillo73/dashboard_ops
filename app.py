@@ -46,6 +46,7 @@ from utils.charts import (
     chart_dona_territorial,
     chart_evolucion_anual_orden,
     chart_proveedor_binario,
+    chart_genero_donut,
     chart_transicion_secop,
     chart_distribucion_departamentos_por_orden,
     chart_mapa_calor_departamentos,
@@ -103,17 +104,36 @@ mun_c, mun_v, mun_e, mun_nit = get_ord_stats("MUNICIPAL")
 anios_sel = sorted(df["ANIO"].unique().tolist())
 rango_anios = f"{anios_sel[0]}–{anios_sel[-1]}" if len(anios_sel) > 1 else str(anios_sel[0])
 
+solo_pn = (pct_pj < 0.05)
+tot_pn_unicas = int(meta.get("total_personas_naturales_unicas", 0))
+val_defl_meta = float(meta.get("valor_deflactado_cop", 0.0))
+c_muj_sel = int(df["CONTRATOS_MUJER"].sum())
+c_hom_sel = int(df["CONTRATOS_HOMBRE"].sum())
+pct_muj_sel = c_muj_sel / max(c_muj_sel + c_hom_sel, 1) * 100.0
+pct_hom_sel = 100.0 - pct_muj_sel
+
+tag_prov = (
+    f"👤 100% Personas Naturales • {fmt_int_co(tot_pn_unicas)} contratistas únicos"
+    if solo_pn
+    else f"👤 {fmt_dec_co(pct_pn, 1)}% Persona Natural • {fmt_dec_co(pct_pj, 1)}% Persona Jurídica"
+)
+sub_hero_l = (
+    f"👤 100% Personas Naturales (Datos Abiertos CCE) • ♀️ {fmt_dec_co(pct_muj_sel, 1)}% Mujeres • ♂️ {fmt_dec_co(pct_hom_sel, 1)}% Hombres"
+    if solo_pn
+    else f"👤 {fmt_int_co(contratos_pn)} Persona Natural ({fmt_dec_co(pct_pn, 1)}%) • 🏢 {fmt_int_co(total_contratos - contratos_pn)} Persona Jurídica ({fmt_dec_co(pct_pj, 1)}%)"
+)
+
 # ── ENCABEZADO INSTITUCIONAL CCE ────────────────────────────────────────────
 st.markdown(f"""
 <div class="main-header">
     <div class="color-strip"></div>
     <h1>🏛️ Observatorio de Contratación – Prestación de Servicios (OPS)</h1>
-    <p>Agencia Nacional de Contratación Pública – Colombia Compra Eficiente | Radiografía nacional y territorial de contratos de prestación de servicios en SECOP I y SECOP II</p>
+    <p>Agencia Nacional de Contratación Pública – Colombia Compra Eficiente | Base Oficial de Datos Abiertos (SECOP I y SECOP II — Personas Naturales)</p>
     <span class="tag">📅 Vigencias {rango_anios}</span>
-    <span class="tag">🏢 Colombia Compra Eficiente</span>
-    <span class="tag">📋 {fmt_int_co(total_contratos)} contratos depurados (Cuantía &gt; $0)</span>
+    <span class="tag">🌐 Datos Abiertos (datos.gov.co)</span>
+    <span class="tag">📋 {fmt_int_co(total_contratos)} contratos depurados ($1M–$500M)</span>
     <span class="tag">🏛️ {fmt_int_co(total_entidades)} entidades compradoras</span>
-    <span class="tag">👤 {fmt_dec_co(pct_pn, 1)}% Persona Natural • {fmt_dec_co(pct_pj, 1)}% Persona Jurídica</span>
+    <span class="tag">{tag_prov}</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -130,7 +150,7 @@ with top_l:
         <div class="ops-pill-header">Número total de los contratos<br>de prestación de servicios</div>
         <div class="ops-value-box">
             <div class="ops-value-main">{fmt_int_co(total_contratos)}</div>
-            <div class="ops-value-sub">👤 {fmt_int_co(contratos_pn)} Persona Natural ({fmt_dec_co(pct_pn, 1)}%) • 🏢 {fmt_int_co(total_contratos - contratos_pn)} Persona Jurídica ({fmt_dec_co(pct_pj, 1)}%)</div>
+            <div class="ops-value-sub">{sub_hero_l}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -214,22 +234,25 @@ for col_ui, titulo_e, cnt_e, cnt_nit in ent_blocks:
         </div>
         """, unsafe_allow_html=True)
 
-valor_nominal_sel = float(df["VALOR_NOMINAL"].sum()) if "VALOR_NOMINAL" in df.columns else valor_total
-n_out_meta = int(meta.get("n_contratos_outlier_digitacion", 0))
-val_out_meta = float(meta.get("valor_outliers_digitacion_cop", 0.0))
-
+conc = meta.get("conciliacion_online_sep01", {})
+conc_txt = (
+    f" Validación contra herramienta online CCE al <code>01/09/2026</code>: "
+    f"<strong>{fmt_int_co(conc.get('replicado_contratos', 7360772))}</strong> vs. {fmt_int_co(conc.get('online_contratos', 7351486))} contratos "
+    f"(<strong>+{fmt_dec_co(conc.get('error_pct_contratos', 0.13), 2)}%</strong>) y <strong>${fmt_dec_co(conc.get('replicado_valor_b', 150.01), 2)} B</strong> vs. $150 B (<strong>+{fmt_dec_co(conc.get('error_pct_valor', 0.01), 2)}%</strong>)."
+    if conc else ""
+)
 st.markdown(f"""
 <div class="note-box">
-    <strong>📌 Nota Técnica sobre Depuración y Cuantía Real vs. Nominal:</strong> Base consolidada SECOP I + SECOP II (vigencias 2018–2026, corte de firmas al <strong>{meta.get('fecha_firma_max', '2026')}</strong>).
-    Se eliminaron <strong>{fmt_int_co(meta.get('total_duplicados_eliminados', 0))}</strong> duplicados por <code>ID Contrato</code> y <strong>{fmt_int_co(meta.get('total_descartados_valor_cero', 0))}</strong> registros con valor $0.
-    La <strong>Cuantía Real</strong> de la selección activa es de <strong>{fmt_billones(valor_total)}</strong>. En la fuente original de SECOP existen <strong>{fmt_int_co(n_out_meta)}</strong> contratos individuales con errores humanos de digitación de ceros (cuantías individuales ≥ $1 Billón o Persona Natural ≥ $5.000 Millones, que suman {fmt_billones(val_out_meta)}; cuantía nominal bruta de la selección: {fmt_billones(valor_nominal_sel)}). Se conservan intactos los <strong>{fmt_int_co(meta.get('total_contratos', total_contratos))}</strong> contratos en el conteo oficial y el detalle de los atípicos es auditable en la pestaña <em>Bases y Descargas</em>.
+    <strong>📌 Nota Técnica – Base Oficial de Datos Abiertos (Personas Naturales):</strong> Extraída directamente desde <code>datos.gov.co</code> — <strong>SECOP I (f789-7hwg)</strong> y <strong>SECOP II (jbjy-vk9h)</strong> (vigencias 2018–2026, corte de firmas al <strong>{meta.get('fecha_firma_max', '2026-11-26')}</strong>).
+    Aplica la Ficha Técnica oficial de OPS (rango de cuantía <strong>$1M–$500M COP</strong>, exclusiones de objeto no OPS, exclusión de personas jurídicas por razón social y tipo de identificación, estados ejecutables y deduplicación global por <code>ID Contrato</code> — eliminando 100% de atípicos extremos de digitación).
+    Valor deflactado global (PIB base 2015): <strong>{fmt_billones(val_defl_meta)}</strong>.{conc_txt}
 </div>
 """, unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SECCIÓN 2: ANÁLISIS VISUAL EJECUTIVO
 # ═══════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="section-header">📊 Análisis Visual: Carácter Territorial, Evolución Anual y Tipo de Proveedor</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">📊 Análisis Visual: Carácter Territorial, Evolución Anual, Género y SECOP II</div>', unsafe_allow_html=True)
 
 m_col1, m_col2 = st.columns([2.2, 1.0])
 with m_col1:
@@ -258,9 +281,13 @@ with g2:
 
 g3, g4 = st.columns([1.05, 1.75])
 with g3:
-    st.markdown("**Distribución binaria: Persona Natural vs. Persona Jurídica**")
     met_prov = "valor" if metrica_home == "valor" else "contratos"
-    st.plotly_chart(chart_proveedor_binario(df, met_prov), width="stretch", key="dona_prov_home")
+    if solo_pn:
+        st.markdown("**Enfoque de género en Personas Naturales (Mujeres vs. Hombres)**")
+        st.plotly_chart(chart_genero_donut(df, met_prov), width="stretch", key="dona_prov_home")
+    else:
+        st.markdown("**Distribución binaria: Persona Natural vs. Persona Jurídica**")
+        st.plotly_chart(chart_proveedor_binario(df, met_prov), width="stretch", key="dona_prov_home")
 
 with g4:
     st.markdown("**Transición digital: SECOP I vs. SECOP II por vigencia**")

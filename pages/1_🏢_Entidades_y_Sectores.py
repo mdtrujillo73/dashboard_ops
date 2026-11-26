@@ -1,4 +1,4 @@
-﻿"""
+"""
 Página 1: Análisis por Entidades Compradoras, Sectores y Tipologías de Objeto
 Colombia Compra Eficiente – Observatorio de Prestación de Servicios (OPS 2018–2026)
 """
@@ -36,7 +36,7 @@ inject_css()
 
 df_raw = load_entidades_data()
 if df_raw.empty:
-    st.error("Ejecute primero `python dashboard_ops/build_dashboard_data.py`.")
+    st.error("Ejecute primero `python dashboard_ops/build_dashboard_data_datos_abiertos.py`.")
     st.stop()
 
 df = render_sidebar_filters(df_raw)
@@ -109,8 +109,9 @@ if entidad_sel not in ("— Seleccione una entidad —", "— Sin coincidencias 
 
     ec = int(ent_df["N_CONTRATOS"].sum())
     ev = float(ent_df["VALOR_TOTAL"].sum())
-    ec_pn = int(ent_df.loc[ent_df["TIPO_PROVEEDOR_FINAL"] == "PERSONA NATURAL", "N_CONTRATOS"].sum())
-    pct_epn = ec_pn / max(ec, 1) * 100.0
+    ec_m = int(ent_df["CONTRATOS_MUJER"].sum())
+    ec_h = int(ent_df["CONTRATOS_HOMBRE"].sum())
+    pct_muj = ec_m / max(ec_m + ec_h, 1) * 100.0
     dur_prom = float(ent_df["DURACION_SUMA"].sum()) / max(int(ent_df["DURACION_CONTEO"].sum()), 1)
 
     f1, f2 = st.columns([1.65, 1.35])
@@ -124,10 +125,10 @@ if entidad_sel not in ("— Seleccione una entidad —", "— Sin coincidencias 
             <div class="entity-row">
                 <div class="entity-stat">📋 NIT: {nit} ({n_cods} cuenta(s) SECOP)</div>
                 <div class="entity-stat">🗺️ {depto} / {mpio}</div>
-                <div class="entity-stat">📄 {fmt_int_co(ec)} contratos OPS</div>
+                <div class="entity-stat">📄 {fmt_int_co(ec)} contratos OPS (Personas Naturales)</div>
                 <div class="entity-stat">💰 {fmt_billones(ev)} ({fmt_cop_exacto(ev)})</div>
                 <div class="entity-stat">💵 Promedio: {fmt_cop_exacto(ev / max(ec, 1))}</div>
-                <div class="entity-stat">👤 {fmt_dec_co(pct_epn, 1)}% Persona Natural</div>
+                <div class="entity-stat">👩 {fmt_dec_co(pct_muj, 1)}% Mujeres (género def.)</div>
                 <div class="entity-stat">⏱️ Duración prom.: {fmt_dec_co(dur_prom, 0)} días</div>
             </div>
         </div>
@@ -187,21 +188,20 @@ with s2:
 # ── DIRECTORIO CONSOLIDADO DESCARGABLE ──────────────────────────────────────
 st.markdown('<div class="section-header">📋 Directorio Consolidado de Entidades Compradoras</div>', unsafe_allow_html=True)
 
-df_dir_src = df.copy()
-df_dir_src["_c_pn"] = (df_dir_src["TIPO_PROVEEDOR_FINAL"] == "PERSONA NATURAL").astype(int) * df_dir_src["N_CONTRATOS"]
 directorio = (
-    df_dir_src.groupby(["CODIGO_ENTIDAD", "NIT_ENTIDAD", "NOMBRE_ENTIDAD", "ORDEN_CPS", "DEPARTAMENTO", "MUNICIPIO", "SECTOR"], observed=True)
+    df.groupby(["CODIGO_ENTIDAD", "NIT_ENTIDAD", "NOMBRE_ENTIDAD", "ORDEN_CPS", "DEPARTAMENTO", "MUNICIPIO", "SECTOR"], observed=True)
     .agg(
         Contratos=("N_CONTRATOS", "sum"),
         Valor_COP=("VALOR_TOTAL", "sum"),
-        Contratos_PN=("_c_pn", "sum"),
+        Contratos_Mujer=("CONTRATOS_MUJER", "sum"),
+        Contratos_Hombre=("CONTRATOS_HOMBRE", "sum"),
         Dur_Sum=("DURACION_SUMA", "sum"),
         Dur_Cnt=("DURACION_CONTEO", "sum"),
     )
     .reset_index()
     .sort_values("Contratos", ascending=False)
 )
-directorio["Pct_PN"] = (directorio["Contratos_PN"] / directorio["Contratos"].clip(lower=1) * 100).round(1)
+directorio["Pct_Mujer"] = (directorio["Contratos_Mujer"] / (directorio["Contratos_Mujer"] + directorio["Contratos_Hombre"]).clip(lower=1) * 100).round(1)
 directorio["Duracion_Prom_Dias"] = (directorio["Dur_Sum"] / directorio["Dur_Cnt"].clip(lower=1)).round(0).astype(int)
 directorio["Carácter"] = directorio["ORDEN_CPS"].map(ORDEN_LABELS)
 
@@ -229,7 +229,7 @@ dir_view["Valor_Fmt"] = dir_view["Valor_COP"].apply(fmt_cop_exacto)
 st.dataframe(
     dir_view[[
         "NOMBRE_ENTIDAD", "NIT_ENTIDAD", "Carácter", "DEPARTAMENTO", "MUNICIPIO",
-        "SECTOR", "Contratos", "Valor_Fmt", "Pct_PN", "Duracion_Prom_Dias"
+        "SECTOR", "Contratos", "Valor_Fmt", "Pct_Mujer", "Duracion_Prom_Dias"
     ]].rename(columns={
         "NOMBRE_ENTIDAD": "Entidad",
         "NIT_ENTIDAD": "NIT",
@@ -237,7 +237,7 @@ st.dataframe(
         "MUNICIPIO": "Municipio",
         "SECTOR": "Sector",
         "Valor_Fmt": "Valor Total (COP)",
-        "Pct_PN": "% Persona Natural",
+        "Pct_Mujer": "% Mujeres (gén. def.)",
         "Duracion_Prom_Dias": "Duración Prom. (Días)",
     }),
     width="stretch",

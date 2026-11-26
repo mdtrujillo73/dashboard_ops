@@ -1,4 +1,4 @@
-﻿"""
+"""
 Página 4: Proveedores (Persona Natural vs. Persona Jurídica), Género y Recurrencia Contractual
 Colombia Compra Eficiente – Observatorio de Prestación de Servicios (OPS 2018–2026)
 """
@@ -20,6 +20,7 @@ from utils.data_loader import (
     load_recurrencia_data,
     load_consecutivos_data,
     load_top_contratistas,
+    load_meta,
     render_sidebar_filters,
     fmt_int_co,
     fmt_dec_co,
@@ -66,10 +67,17 @@ v_muj = float(df["VALOR_MUJER"].sum())
 v_hom = float(df["VALOR_HOMBRE"].sum())
 tot_gen = max(c_muj + c_hom, 1)
 
-st.markdown("# 👥 Proveedores, Enfoque de Género y Recurrencia Contractual")
+meta = load_meta()
+tot_pn_unicas = int(meta.get("total_personas_naturales_unicas", 0))
+c_apoyo = int(df["CONTRATOS_APOYO"].sum())
+c_prof = int(df["CONTRATOS_PROFESIONAL"].sum())
+c_tec = int(df["CONTRATOS_TECNICO"].sum())
+c_otros = int(df["CONTRATOS_OTROS"].sum())
+
+st.markdown("# 👥 Contratistas (Personas Naturales), Género y Recurrencia Contractual")
 st.markdown(
-    "Análisis bajo la taxonomía oficial depurada en **dos únicas categorías** (`PERSONA NATURAL` y `PERSONA JURIDICA`), "
-    "distribución de género en contratistas naturales y recurrencia interanual."
+    r"Análisis del universo depurado de **Personas Naturales** (Ficha Técnica Datos Abiertos CCE, rango \$1M–\$500M), "
+    "tipología de objeto contractual, enfoque de género y recurrencia interanual."
 )
 
 # ── KPIs PRINCIPALES ────────────────────────────────────────────────────────
@@ -77,46 +85,51 @@ k1, k2, k3, k4 = st.columns(4)
 with k1:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-label">Persona Natural</div>
+        <div class="kpi-label">Contratos Persona Natural</div>
         <div class="kpi-value">{fmt_int_co(pn_c)}</div>
-        <div class="kpi-sub">{fmt_dec_co(pn_c / max(tot_c, 1) * 100, 1)}% contratos • {fmt_billones(pn_v, short=True)}</div>
+        <div class="kpi-sub">100,0% universo depurado • {fmt_billones(pn_v, short=True)}</div>
     </div>""", unsafe_allow_html=True)
 with k2:
     st.markdown(f"""
     <div class="kpi-card naranja">
-        <div class="kpi-label">Persona Jurídica</div>
-        <div class="kpi-value">{fmt_int_co(pj_c)}</div>
-        <div class="kpi-sub">{fmt_dec_co(pj_c / max(tot_c, 1) * 100, 1)}% contratos • {fmt_billones(pj_v, short=True)}</div>
+        <div class="kpi-label">Personas Naturales Únicas</div>
+        <div class="kpi-value">{fmt_int_co(tot_pn_unicas)}</div>
+        <div class="kpi-sub">Promedio histórico: {fmt_dec_co(pn_c / max(tot_pn_unicas, 1), 2)} contratos/persona</div>
     </div>""", unsafe_allow_html=True)
 with k3:
     st.markdown(f"""
     <div class="kpi-card morado">
-        <div class="kpi-label">Mujeres (Persona Natural)</div>
+        <div class="kpi-label">Mujeres (sobre género identificado)</div>
         <div class="kpi-value">{fmt_dec_co(c_muj / tot_gen * 100, 1)}%</div>
         <div class="kpi-sub">{fmt_int_co(c_muj)} contratos • Prom.: {fmt_cop_exacto(v_muj / max(c_muj, 1))}</div>
     </div>""", unsafe_allow_html=True)
 with k4:
     st.markdown(f"""
     <div class="kpi-card verde">
-        <div class="kpi-label">Hombres (Persona Natural)</div>
+        <div class="kpi-label">Hombres (sobre género identificado)</div>
         <div class="kpi-value">{fmt_dec_co(c_hom / tot_gen * 100, 1)}%</div>
         <div class="kpi-sub">{fmt_int_co(c_hom)} contratos • Prom.: {fmt_cop_exacto(v_hom / max(c_hom, 1))}</div>
     </div>""", unsafe_allow_html=True)
 
-# ── SECCIÓN 1: PERSONA NATURAL VS JURÍDICA ─────────────────────────────────
-st.markdown('<div class="section-header">⚖️ Persona Natural vs. Persona Jurídica: Volumen vs. Cuantía</div>', unsafe_allow_html=True)
+# ── SECCIÓN 1: TIPOLOGÍA DE OBJETO Y VALOR POR ORDEN ────────────────────────
+st.markdown('<div class="section-header">⚖️ Tipología de Objeto Contractual y Valor por Carácter Territorial</div>', unsafe_allow_html=True)
 
-p1, p2, p3 = st.columns([1.0, 1.0, 1.35])
+p1, p2 = st.columns([1.05, 1.35])
 with p1:
-    st.markdown("**Por número de contratos**")
-    st.plotly_chart(chart_proveedor_binario(df, "contratos"), width="stretch", key="p4_dona_c")
+    st.markdown("**Clasificación por tipología del objeto contractual OPS**")
+    fig_tip = go.Figure(go.Pie(
+        labels=["Apoyo a la Gestión", "Servicios Profesionales", "Técnicos / Asistenciales", "Otros OPS"],
+        values=[c_apoyo, c_prof, c_tec, c_otros],
+        hole=0.54,
+        marker=dict(colors=[CCE_AZUL, CCE_MORADO, CCE_VERDE, CCE_NARANJA], line=dict(color="#FFFFFF", width=2.5)),
+        textinfo="percent+label",
+    ))
+    fig_tip.update_layout(**LAYOUT_DEFAULTS, showlegend=True, legend=dict(orientation="h", y=-0.05, x=0.5, xanchor="center"), height=340)
+    st.plotly_chart(fig_tip, width="stretch", key="p4_dona_c")
 with p2:
-    st.markdown("**Por valor contratado ($ Billones)**")
-    st.plotly_chart(chart_proveedor_binario(df, "valor"), width="stretch", key="p4_dona_v")
-with p3:
-    st.markdown("**% Persona Jurídica en el Valor por Carácter Territorial**")
+    st.markdown("**Contratos y Cuantía ($ Billones) por Carácter Territorial**")
     ord_tp = (
-        df.groupby(["ORDEN_CPS", "TIPO_PROVEEDOR_FINAL"], observed=True)
+        df.groupby("ORDEN_CPS", observed=True)
         .agg(Contratos=("N_CONTRATOS", "sum"), Valor=("VALOR_TOTAL", "sum"))
         .reset_index()
     )
@@ -126,13 +139,14 @@ with p3:
         ord_tp,
         x="Carácter",
         y="Valor_B",
-        color="TIPO_PROVEEDOR_FINAL",
+        color="Carácter",
         category_orders={"Carácter": [ORDEN_LABELS[k] for k in ORDEN_ORDER]},
-        color_discrete_map=PROVEEDOR_COLORS,
-        barmode="group",
-        labels={"Valor_B": "Valor ($ Billones COP)", "TIPO_PROVEEDOR_FINAL": "Tipo Proveedor Final"},
+        color_discrete_map={ORDEN_LABELS["NACIONAL"]: CCE_AZUL, ORDEN_LABELS["DEPARTAMENTAL"]: CCE_MORADO, ORDEN_LABELS["MUNICIPAL"]: CCE_VERDE},
+        text=ord_tp["Valor_B"].apply(lambda x: f"$ {fmt_dec_co(x, 2)} B"),
+        labels={"Valor_B": "Valor ($ Billones COP)"},
     )
-    fig_otp.update_layout(**LAYOUT_DEFAULTS, legend=dict(orientation="h", y=1.1, x=1, xanchor="right"), height=340)
+    fig_otp.update_traces(textposition="outside")
+    fig_otp.update_layout(**LAYOUT_DEFAULTS, showlegend=False, height=340)
     st.plotly_chart(fig_otp, width="stretch", key="p4_ord_tp")
 
 # ── SECCIÓN 2: ENFOQUE DE GÉNERO ────────────────────────────────────────────
@@ -220,25 +234,25 @@ if not df_rec.empty and not df_cons.empty:
 # ── SECCIÓN 4: TOP PROVEEDORES ──────────────────────────────────────────────
 df_top = load_top_contratistas()
 if not df_top.empty:
-    with st.expander("🏆 Ver perfiles con mayor volumen de contratos o cuantía (Top Proveedores 2018–2026)", expanded=False):
-        t_pn, t_pj = st.tabs(["🏢 Top Personas Jurídicas", "👤 Top Personas Naturales (por frecuencia)"])
-        with t_pj:
-            sub_pj = df_top[df_top["TIPO_PROVEEDOR_FINAL"] == "PERSONA JURIDICA"].sort_values("VALOR_TOTAL", ascending=False).head(50).copy()
-            sub_pj["Valor Total"] = sub_pj["VALOR_TOTAL"].apply(fmt_cop_exacto)
-            sub_pj["Valor Promedio"] = sub_pj["VALOR_PROMEDIO"].apply(fmt_cop_exacto)
-            st.dataframe(
-                sub_pj[["NOMBRE_PROVEEDOR", "IDENTIFICACION", "N_CONTRATOS", "VIGENCIAS_ACTIVAS", "Valor Total", "Valor Promedio"]].rename(columns={
-                    "NOMBRE_PROVEEDOR": "Proveedor", "IDENTIFICACION": "NIT / ID", "N_CONTRATOS": "Contratos", "VIGENCIAS_ACTIVAS": "Vigencias"
-                }),
-                width="stretch", hide_index=True, height=360,
-            )
-        with t_pn:
-            sub_pn = df_top[df_top["TIPO_PROVEEDOR_FINAL"] == "PERSONA NATURAL"].sort_values("N_CONTRATOS", ascending=False).head(50).copy()
+    with st.expander("🏆 Ver perfiles con mayor volumen de contratos o cuantía (Top Personas Naturales 2018–2026)", expanded=False):
+        t_freq, t_val = st.tabs(["👤 Top por Número de Contratos", "💰 Top por Cuantía Acumulada"])
+        with t_freq:
+            sub_pn = df_top.sort_values("N_CONTRATOS", ascending=False).head(50).copy()
             sub_pn["Valor Total"] = sub_pn["VALOR_TOTAL"].apply(fmt_cop_exacto)
             sub_pn["Valor Promedio"] = sub_pn["VALOR_PROMEDIO"].apply(fmt_cop_exacto)
             st.dataframe(
                 sub_pn[["NOMBRE_PROVEEDOR", "IDENTIFICACION", "N_CONTRATOS", "VIGENCIAS_ACTIVAS", "Valor Total", "Valor Promedio"]].rename(columns={
-                    "NOMBRE_PROVEEDOR": "Proveedor", "IDENTIFICACION": "Identificación", "N_CONTRATOS": "Contratos", "VIGENCIAS_ACTIVAS": "Vigencias"
+                    "NOMBRE_PROVEEDOR": "Contratista", "IDENTIFICACION": "Identificación", "N_CONTRATOS": "Contratos", "VIGENCIAS_ACTIVAS": "Vigencias"
+                }),
+                width="stretch", hide_index=True, height=360,
+            )
+        with t_val:
+            sub_val = df_top.sort_values("VALOR_TOTAL", ascending=False).head(50).copy()
+            sub_val["Valor Total"] = sub_val["VALOR_TOTAL"].apply(fmt_cop_exacto)
+            sub_val["Valor Promedio"] = sub_val["VALOR_PROMEDIO"].apply(fmt_cop_exacto)
+            st.dataframe(
+                sub_val[["NOMBRE_PROVEEDOR", "IDENTIFICACION", "N_CONTRATOS", "VIGENCIAS_ACTIVAS", "Valor Total", "Valor Promedio"]].rename(columns={
+                    "NOMBRE_PROVEEDOR": "Contratista", "IDENTIFICACION": "Identificación", "N_CONTRATOS": "Contratos", "VIGENCIAS_ACTIVAS": "Vigencias"
                 }),
                 width="stretch", hide_index=True, height=360,
             )

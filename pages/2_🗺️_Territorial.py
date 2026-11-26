@@ -47,7 +47,7 @@ inject_css()
 
 df_raw = load_entidades_data()
 if df_raw.empty:
-    st.error("Ejecute primero `python dashboard_ops/build_dashboard_data.py`.")
+    st.error("Ejecute primero `python dashboard_ops/build_dashboard_data_datos_abiertos.py`.")
     st.stop()
 
 df = render_sidebar_filters(df_raw)
@@ -80,7 +80,7 @@ tab_mapa, tab_dpto, tab_matriz, tab_rank = st.tabs([
 with tab_mapa:
     st.markdown('<div class="section-header">🔥 Mapa de Calor Interactivo: Departamentos y Municipios</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="info-box">📌 <b>Georreferenciación DANE DIVIPOLA (99,96% de cobertura municipal):</b> Explora la concentración geográfica de contratos OPS, cuantías reales y entidades. Selecciona un departamento para activar el <b>zoom automático</b> sobre todos sus municipios.</div>',
+        '<div class="info-box">📌 <b>Georreferenciación DANE DIVIPOLA (Datos Abiertos SECOP I y II):</b> Explora la concentración geográfica de contratos OPS con Personas Naturales, cuantías y entidades. Selecciona un departamento para activar el <b>zoom automático</b> sobre todos sus municipios.</div>',
         unsafe_allow_html=True,
     )
 
@@ -99,13 +99,13 @@ with tab_mapa:
     with c2:
         metrica_calor = st.selectbox(
             "Indicador del Mapa:",
-            options=["contratos", "valor", "entidades", "promedio", "pct_pn"],
+            options=["contratos", "valor", "entidades", "promedio", "pct_mujer"],
             format_func=lambda x: {
                 "contratos": "📄 Número de Contratos OPS",
-                "valor": "💰 Valor Real Contratado (COP)",
+                "valor": "💰 Valor Contratado (COP)",
                 "entidades": "🏛️ Entidades Únicas",
                 "promedio": "💵 Valor Promedio por Contrato",
-                "pct_pn": "👤 % Persona Natural",
+                "pct_mujer": "👩 % Mujeres (Género def.)",
             }[x],
             key="met_calor_ops",
         )
@@ -215,20 +215,20 @@ with tab_mapa:
         if not agg_m.empty:
             agg_m = agg_m.sort_values("contratos", ascending=False)
             show_m = agg_m[[
-                "CODIGO_DIVIPOLA", "DEPARTAMENTO", "MUNICIPIO", "contratos", "valor_mm", "entidades", "valor_promedio_m", "pct_pn"
+                "CODIGO_DIVIPOLA", "DEPARTAMENTO", "MUNICIPIO", "contratos", "valor_mm", "entidades", "valor_promedio_m", "pct_mujer"
             ]].rename(columns={
                 "CODIGO_DIVIPOLA": "DIVIPOLA",
                 "DEPARTAMENTO": "Departamento",
                 "MUNICIPIO": "Municipio",
                 "contratos": "Contratos OPS",
-                "valor_mm": "Valor Real ($ Miles de Millones)",
+                "valor_mm": "Valor ($ Miles de Millones)",
                 "entidades": "Entidades",
                 "valor_promedio_m": "Valor Prom. ($ Millones)",
-                "pct_pn": "% Persona Natural",
+                "pct_mujer": "% Mujeres (gén. def.)",
             })
-            show_m["Valor Real ($ Miles de Millones)"] = show_m["Valor Real ($ Miles de Millones)"].round(2)
+            show_m["Valor ($ Miles de Millones)"] = show_m["Valor ($ Miles de Millones)"].round(2)
             show_m["Valor Prom. ($ Millones)"] = show_m["Valor Prom. ($ Millones)"].round(2)
-            show_m["% Persona Natural"] = show_m["% Persona Natural"].round(1)
+            show_m["% Mujeres (gén. def.)"] = show_m["% Mujeres (gén. def.)"].round(1)
             st.dataframe(show_m, width="stretch", hide_index=True, height=380)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -339,12 +339,11 @@ with tab_matriz:
     with hm1:
         dim_mat = st.selectbox(
             "Cruzar Departamentos contra:",
-            options=["ANIO", "ORDEN_CPS", "GOBIERNO", "TIPO_PROVEEDOR_FINAL", "FUENTE"],
+            options=["ANIO", "ORDEN_CPS", "GOBIERNO", "FUENTE"],
             format_func=lambda x: {
                 "ANIO": "📅 Vigencia (2018–2026)",
                 "ORDEN_CPS": "🏛️ Carácter Territorial",
                 "GOBIERNO": "⚖️ Periodo Presidencial",
-                "TIPO_PROVEEDOR_FINAL": "👤 Persona Natural vs. Jurídica",
                 "FUENTE": "💻 Plataforma SECOP I / II",
             }[x],
             key="dim_mat_ops",
@@ -389,17 +388,17 @@ with tab_rank:
             sort_c = {"contratos": "contratos", "valor": "valor_billones", "entidades": "entidades"}[met_d]
             depto_agg = depto_agg.sort_values(sort_c, ascending=False)
             depto_show = depto_agg[[
-                "DEPARTAMENTO", "contratos", "valor_billones", "entidades", "municipios", "pct_pn"
+                "DEPARTAMENTO", "contratos", "valor_billones", "entidades", "municipios", "pct_mujer"
             ]].rename(columns={
                 "DEPARTAMENTO": "Departamento",
                 "contratos": "Contratos",
-                "valor_billones": "Valor Real ($ B)",
+                "valor_billones": "Valor ($ B)",
                 "entidades": "Entidades",
                 "municipios": "Municipios",
-                "pct_pn": "% P. Natural",
+                "pct_mujer": "% Mujeres",
             })
-            depto_show["Valor Real ($ B)"] = depto_show["Valor Real ($ B)"].apply(lambda v: f"$ {fmt_dec_co(v, 2)} B")
-            depto_show["% P. Natural"] = depto_show["% P. Natural"].apply(lambda v: f"{fmt_dec_co(v, 1)}%")
+            depto_show["Valor ($ B)"] = depto_show["Valor ($ B)"].apply(lambda v: f"$ {fmt_dec_co(v, 2)} B")
+            depto_show["% Mujeres"] = depto_show["% Mujeres"].apply(lambda v: f"{fmt_dec_co(v, 1)}%")
             st.dataframe(depto_show, width="stretch", hide_index=True, height=460)
 
     st.markdown('<div class="section-header">📍 Top Municipios con Mayor Contratación OPS</div>', unsafe_allow_html=True)

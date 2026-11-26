@@ -1,37 +1,55 @@
 {
-  "fecha_generacion": "2026-11-22 14:07:57",
+  "fecha_generacion": "2026-11-26 17:08:33",
+  "fuente_oficial": "Datos Abiertos (datos.gov.co) — SECOP I (f789-7hwg) y SECOP II (jbjy-vk9h)",
+  "metodologia": "Ficha Técnica OPS CCE + Filtro Persona Natural y Estados Ejecutables (rango $1M–$500M)",
   "fecha_firma_min": "2018-01-01",
-  "fecha_firma_max": "2026-08-28",
-  "total_filas_leidas": 8092820,
-  "total_descartados_valor_cero": 6718,
-  "total_duplicados_eliminados": 746350,
-  "total_contratos": 6700430,
-  "valor_total_cop": 217382873407972.06,
-  "total_entidades_cod": 9837,
-  "total_entidades_unif": 6899,
-  "total_nits_unicos": 6855,
-  "total_personas_naturales_unicas": 1421658,
+  "fecha_firma_max": "2026-11-26",
+  "total_filas_leidas": 9680631,
+  "total_descartados_valor_cero": 623595,
+  "total_duplicados_eliminados": 95077,
+  "total_descartados_filtros_texto_pj_estados": 1417760,
+  "total_contratos": 7544199,
+  "valor_total_cop": 152057010758685.12,
+  "valor_nominal_cop": 152057010758685.12,
+  "valor_deflactado_cop": 101192557353315.0,
+  "total_entidades_cod": 13201,
+  "total_entidades_unif": 13187,
+  "total_nits_unicos": 9847,
+  "total_personas_naturales_unicas": 1633520,
+  "municipios_divipola_activos": 1101,
+  "cobertura_divipola_pct": 99.28,
   "entidades_por_orden": {
-    "DEPARTAMENTAL": 7731,
-    "MUNICIPAL": 1692,
-    "NACIONAL": 414
+    "DEPARTAMENTAL": 7024,
+    "MUNICIPAL": 4747,
+    "NACIONAL": 1430
   },
   "nits_por_orden": {
-    "DEPARTAMENTAL": 5839,
-    "MUNICIPAL": 1312,
-    "NACIONAL": 199
+    "DEPARTAMENTAL": 6013,
+    "MUNICIPAL": 3158,
+    "NACIONAL": 998
   },
   "contratos_por_orden": {
-    "DEPARTAMENTAL": 3040959,
-    "MUNICIPAL": 2626566,
-    "NACIONAL": 1032905
+    "DEPARTAMENTAL": 2696194,
+    "MUNICIPAL": 3189253,
+    "NACIONAL": 1658752
   },
   "valor_por_orden": {
-    "DEPARTAMENTAL": 91306542815584.7,
-    "MUNICIPAL": 70043996487016.41,
-    "NACIONAL": 56032334105370.94
+    "DEPARTAMENTAL": 50641440636613.48,
+    "MUNICIPAL": 45645769760557.32,
+    "NACIONAL": 55769800361514.33
   },
-  "valor_nominal_cop": 1.3430007339243917e+17,
-  "n_contratos_outlier_digitacion": 253,
-  "valor_outliers_digitacion_cop": 1.340826905190312e+17
+  "n_contratos_outlier_digitacion": 0,
+  "valor_outliers_digitacion_cop": 0.0,
+  "conciliacion_online_sep01": {
+    "corte": "2018-01-01 .. 2026-09-01",
+    "online_contratos": 7351486,
+    "replicado_contratos": 7360772,
+    "error_pct_contratos": 0.13,
+    "online_contratistas": 1604562,
+    "replicado_contratistas": 1608861,
+    "error_pct_contratistas": 0.27,
+    "online_valor_b": 150.0,
+    "replicado_valor_b": 150.01,
+    "error_pct_valor": 0.01
+  }
 }

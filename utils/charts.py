@@ -185,6 +185,45 @@ def chart_proveedor_binario(df: pd.DataFrame, metrica: str = "contratos") -> go.
     return fig
 
 
+def chart_genero_donut(df: pd.DataFrame, metrica: str = "contratos") -> go.Figure:
+    """Dona de distribución por Género (Mujeres vs. Hombres en Personas Naturales)."""
+    if df.empty:
+        return go.Figure()
+    if metrica == "valor":
+        vm = float(df["VALOR_MUJER"].sum()) / 1e12
+        vh = float(df["VALOR_HOMBRE"].sum()) / 1e12
+        vo = max(float(df["VALOR_TOTAL"].sum()) / 1e12 - vm - vh, 0.0)
+        unidad = "Billones COP"
+        hover_fmt = "$%{value:,.2f} B"
+        vals = [vm, vh, vo]
+    else:
+        cm = int(df["CONTRATOS_MUJER"].sum())
+        ch = int(df["CONTRATOS_HOMBRE"].sum())
+        co = max(int(df["N_CONTRATOS"].sum()) - cm - ch, 0)
+        unidad = "Contratos"
+        hover_fmt = "%{value:,}"
+        vals = [cm, ch, co]
+
+    labels = ["Mujeres", "Hombres", "No Definido"]
+    colors = [CCE_MORADO, CCE_AZUL, "#94A3B8"]
+    fig = go.Figure(go.Pie(
+        labels=labels,
+        values=vals,
+        hole=0.56,
+        marker=dict(colors=colors, line=dict(color="#FFFFFF", width=2.5)),
+        textinfo="percent+label",
+        hovertemplate=f"<b>%{{label}}</b><br>{unidad}: {hover_fmt}<br>%{{percent}}<extra></extra>",
+    ))
+    fig.update_layout(
+        **LAYOUT_DEFAULTS,
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="top", y=-0.04, xanchor="center", x=0.5),
+        annotations=[dict(text=f"<b>{unidad}</b>", x=0.5, y=0.5, font_size=12, showarrow=False, font_color=CCE_AZUL)],
+        height=340,
+    )
+    return fig
+
+
 def chart_transicion_secop(df: pd.DataFrame, metrica: str = "contratos") -> go.Figure:
     if df.empty:
         return go.Figure()
@@ -346,6 +385,8 @@ def aggregate_departamentos(df: pd.DataFrame) -> pd.DataFrame:
             valor_cop=("VALOR_TOTAL", "sum"),
             entidades=("CODIGO_ENTIDAD", "nunique"),
             municipios=("CODIGO_DIVIPOLA", lambda s: s[~s.astype(str).str.endswith("000")].nunique()),
+            contratos_mujer=("CONTRATOS_MUJER", "sum"),
+            contratos_hombre=("CONTRATOS_HOMBRE", "sum"),
             lat=("LATITUD", "mean"),
             lon=("LONGITUD", "mean"),
         )
@@ -356,6 +397,8 @@ def aggregate_departamentos(df: pd.DataFrame) -> pd.DataFrame:
     agg["valor_billones"] = agg["valor_cop"] / 1e12
     agg["valor_promedio_m"] = np.where(agg["contratos"] > 0, (agg["valor_cop"] / agg["contratos"]) / 1e6, 0.0)
     agg["pct_pn"] = np.where(agg["contratos"] > 0, agg["contratos_pn"] / agg["contratos"] * 100.0, 0.0)
+    gen_def = agg["contratos_mujer"] + agg["contratos_hombre"]
+    agg["pct_mujer"] = np.where(gen_def > 0, agg["contratos_mujer"] / gen_def * 100.0, 0.0)
     return agg
 
 
@@ -376,6 +419,7 @@ def chart_mapa_calor_departamentos(
         "entidades": ("entidades", "Entidades Únicas", ",.0f"),
         "promedio": ("valor_promedio_m", "Valor Promedio ($ Millones)", ",.1f"),
         "pct_pn": ("pct_pn", "% Persona Natural", ".1f"),
+        "pct_mujer": ("pct_mujer", "% Mujeres (Género def.)", ".1f"),
     }
     col_z, label_z, _ = metric_cfg.get(metrica, metric_cfg["contratos"])
     colorscale = COLOR_SCALES.get(escala_nombre, "YlOrRd")
@@ -387,7 +431,7 @@ def chart_mapa_calor_departamentos(
         agg["entidades"],
         agg["municipios"],
         agg["valor_promedio_m"],
-        agg["pct_pn"],
+        agg["pct_mujer"],
     ], axis=-1)
 
     fig = go.Figure(go.Choroplethmap(
@@ -413,7 +457,7 @@ def chart_mapa_calor_departamentos(
             "• <b>Entidades Únicas:</b> %{customdata[3]:,}<br>"
             "• <b>Municipios Activos:</b> %{customdata[4]:,}<br>"
             "• <b>Valor Promedio / Contrato:</b> $%{customdata[5]:,.1f} Millones<br>"
-            "• <b>% Persona Natural:</b> %{customdata[6]:.1f}%<extra></extra>"
+            "• <b>% Mujeres (género def.):</b> %{customdata[6]:.1f}%<extra></extra>"
         ),
     ))
 
@@ -462,6 +506,8 @@ def aggregate_municipios(df: pd.DataFrame) -> pd.DataFrame:
             contratos=("N_CONTRATOS", "sum"),
             valor_cop=("VALOR_TOTAL", "sum"),
             entidades=("CODIGO_ENTIDAD", "nunique"),
+            contratos_mujer=("CONTRATOS_MUJER", "sum"),
+            contratos_hombre=("CONTRATOS_HOMBRE", "sum"),
             lat=("LATITUD", "first"),
             lon=("LONGITUD", "first"),
         )
@@ -472,6 +518,8 @@ def aggregate_municipios(df: pd.DataFrame) -> pd.DataFrame:
     agg["valor_mm"] = agg["valor_cop"] / 1e9
     agg["valor_promedio_m"] = np.where(agg["contratos"] > 0, (agg["valor_cop"] / agg["contratos"]) / 1e6, 0.0)
     agg["pct_pn"] = np.where(agg["contratos"] > 0, agg["contratos_pn"] / agg["contratos"] * 100.0, 0.0)
+    gen_def = agg["contratos_mujer"] + agg["contratos_hombre"]
+    agg["pct_mujer"] = np.where(gen_def > 0, agg["contratos_mujer"] / gen_def * 100.0, 0.0)
     return agg
 
 
@@ -493,6 +541,7 @@ def chart_mapa_calor_municipios(
         "entidades": ("entidades", "Entidades Únicas"),
         "promedio": ("valor_promedio_m", "Valor Promedio ($ Millones)"),
         "pct_pn": ("pct_pn", "% Persona Natural"),
+        "pct_mujer": ("pct_mujer", "% Mujeres (Género def.)"),
     }
     col_z, label_z = metric_cfg.get(metrica, metric_cfg["contratos"])
     colorscale = COLOR_SCALES.get(escala_nombre, "YlOrRd")
@@ -505,7 +554,7 @@ def chart_mapa_calor_municipios(
         agg["valor_mm"],
         agg["entidades"],
         agg["valor_promedio_m"],
-        agg["pct_pn"],
+        agg["pct_mujer"],
     ], axis=-1)
 
     hover_template = (
@@ -516,7 +565,7 @@ def chart_mapa_calor_municipios(
         "• <b>Valor Contratado:</b> $%{customdata[4]:,.1f} Miles de Millones COP<br>"
         "• <b>Entidades Únicas:</b> %{customdata[5]:,}<br>"
         "• <b>Valor Promedio / Contrato:</b> $%{customdata[6]:,.1f} Millones<br>"
-        "• <b>% Persona Natural:</b> %{customdata[7]:.1f}%<extra></extra>"
+        "• <b>% Mujeres (género def.):</b> %{customdata[7]:.1f}%<extra></extra>"
     )
 
     n_deptos = agg["DEPARTAMENTO"].nunique()

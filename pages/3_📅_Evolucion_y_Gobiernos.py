@@ -1,4 +1,4 @@
-﻿"""
+"""
 Página 3: Evolución Histórica, Comparativo Presidencial y Efecto Ley de Garantías Electorales
 Colombia Compra Eficiente – Observatorio de Prestación de Servicios (OPS 2018–2026)
 """
@@ -81,9 +81,16 @@ gob_agg = df.groupby("GOBIERNO", observed=True).agg(
     dur_cnt=("DURACION_CONTEO", "sum"),
 )
 
-cols_g = st.columns(3)
-card_cls = ["gris", "", "rojo"]
-for col_ui, cls_c, gob_name in zip(cols_g, card_cls, GOBIERNO_ORDER):
+gobs_presentes = [g for g in GOBIERNO_ORDER if g in gob_agg.index]
+cols_g = st.columns(max(len(gobs_presentes), 1))
+cls_map = {
+    "Santos II (cierre 2018)": "gris",
+    "Duque (2018–2022)": "",
+    "Petro (2022–2026)": "rojo",
+    "Post 7-Ago-2026 (ago–nov)": "verde",
+}
+for col_ui, gob_name in zip(cols_g, gobs_presentes):
+    cls_c = cls_map.get(gob_name, "")
     if gob_name in gob_agg.index:
         r = gob_agg.loc[gob_name]
         nc = int(r["contratos"])

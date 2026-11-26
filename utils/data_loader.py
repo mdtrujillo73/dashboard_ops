@@ -45,12 +45,14 @@ GOBIERNO_ORDER = [
     "Santos II (cierre 2018)",
     "Duque (2018–2022)",
     "Petro (2022–2026)",
+    "Post 7-Ago-2026 (ago–nov)",
 ]
 
 GOBIERNO_COLORS = {
     "Santos II (cierre 2018)": "#5A666A",
     "Duque (2018–2022)": "#174073",
     "Petro (2022–2026)": "#D61C38",
+    "Post 7-Ago-2026 (ago–nov)": "#1E8449",
 }
 
 PROVEEDOR_COLORS = {
@@ -268,16 +270,21 @@ def render_sidebar_filters(df_raw: pd.DataFrame, return_state: bool = False):
             default=[],
         )
 
-        sel_tipo_prov = st.radio(
-            "Tipo de Proveedor Final",
-            options=["Todos", "PERSONA NATURAL", "PERSONA JURIDICA"],
-            format_func=lambda x: {
-                "Todos": "Todos (Natural + Jurídica)",
-                "PERSONA NATURAL": "Persona Natural",
-                "PERSONA JURIDICA": "Persona Jurídica",
-            }[x],
-            horizontal=False,
-        )
+        tipos_disp = df_raw["TIPO_PROVEEDOR_FINAL"].dropna().unique().tolist() if "TIPO_PROVEEDOR_FINAL" in df_raw.columns else []
+        if len(tipos_disp) > 1:
+            sel_tipo_prov = st.radio(
+                "Tipo de Proveedor Final",
+                options=["Todos", "PERSONA NATURAL", "PERSONA JURIDICA"],
+                format_func=lambda x: {
+                    "Todos": "Todos (Natural + Jurídica)",
+                    "PERSONA NATURAL": "Persona Natural",
+                    "PERSONA JURIDICA": "Persona Jurídica",
+                }[x],
+                horizontal=False,
+            )
+        else:
+            sel_tipo_prov = "Todos"
+            st.caption("👤 **Universo:** 100% Personas Naturales (Ficha Técnica Datos Abiertos CCE)")
 
         with st.expander("⚙️ Filtros Avanzados (Plataforma / Sector)", expanded=False):
             fuentes_disp = sorted(df_raw["FUENTE"].dropna().unique().tolist())
@@ -298,9 +305,9 @@ def render_sidebar_filters(df_raw: pd.DataFrame, return_state: bool = False):
         tot_c = meta.get("total_contratos", int(df_raw["N_CONTRATOS"].sum()))
         tot_e = meta.get("total_entidades_cod", int(df_raw["CODIGO_ENTIDAD"].nunique()))
         f_max = meta.get("fecha_firma_max", "2026")
-        st.caption(f"📊 Base depurada: **{fmt_int_co(tot_c)}** contratos | **{fmt_int_co(tot_e)}** entidades")
+        st.caption(f"📊 Datos Abiertos CCE: **{fmt_int_co(tot_c)}** contratos | **{fmt_int_co(tot_e)}** entidades")
         st.caption(f"🗓️ Corte de firmas hasta: **{f_max}**")
-        st.caption("Sin duplicados • Cuantía > $0 • Proveedor binario")
+        st.caption("Personas Naturales • Rango $1M–$500M • Sin duplicados")
 
     tipos_list = None if sel_tipo_prov == "Todos" else [sel_tipo_prov]
     filtros = {
